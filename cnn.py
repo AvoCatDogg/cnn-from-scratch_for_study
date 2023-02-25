@@ -2,7 +2,7 @@ import mnist
 import cifar10
 import numpy as np
 from conv import Conv3x3
-from conv import Conv3x3xn
+#from conv import Conv3x3xn
 from maxpool import MaxPool2
 from softmax import Softmax
 import os
@@ -13,10 +13,9 @@ for i in range(3):
       dict = pickle.load(fo, encoding='bytes')
 '''
 
-# We only use the first 1k examples of each set in the interest of time.
-# Feel free to change this if you want.
+# 먼저 1만개의 cifar10 데이터셋만을 사용하도록 하겠다
 
-with open('/cnn-from-scratch_for_study/cifar-10-batches-py/data_batch_1', 'rb') as fo:
+with open('/cnn-from-scratch_for_study/cifar-10-batches-py/data_batch_2', 'rb') as fo:
       dict = pickle.load(fo, encoding='bytes')
       train_images = np.array(dict[b'data']).reshape(10000, 3, 32, 32).astype(np.float32)
       train_labels = np.array(dict[b'labels'])
@@ -26,12 +25,15 @@ with open('/cnn-from-scratch_for_study/cifar-10-batches-py/test_batch', 'rb') as
       test_images = np.array(dict[b'data']).reshape(10000, 3, 32, 32).astype(np.float32)
       test_labels = np.array(dict[b'labels'])
 
+#conv 레이어이다. RGB값을 따로 각각 8개의 필터를 통해 받아주고, 이를 합쳐주는 레이어이다.
 conv1_r = Conv3x3(8)                  # 32x32x1 -> 30x30x4
 conv1_g = Conv3x3(8)                  # 32x32x1 -> 30x30x4
 conv1_b = Conv3x3(8)                  # 32x32x1 -> 30x30x4
 
+#MAXpool을 거쳐서 데이터의 사이즈를 절반으로 줄인다.
 pool = MaxPool2()                  # 28x28x8 -> 15x15x16
 
+#SoftMax 레이어를 통해 maxpool layer을 지난 결과값들을 10가지 인덱스로 분류한다.
 softmax = Softmax(15 * 15 * 8, 10) # 15x15x16 -> 10
 
 def forward(image, label):
@@ -41,13 +43,14 @@ def forward(image, label):
   - image is a 2d numpy array
   - label is a digit
   '''
-  # We transform the image from [0, 255] to [-0.5, 0.5] to make it easier
+  # 데이터를 0부터 255에서 -0.5 ~ 0.5로 nomalize하는 과정을 거칠것이다.
   # to work with. This is standard practice.
   out = conv1_r.forward((image[0] / 255) - 0.5) + conv1_g.forward((image[1] / 255) - 0.5) + conv1_b.forward((image[2] / 255) - 0.5)
   out = pool.forward(out)
   out = softmax.forward(out)
 
   # Calculate cross-entropy loss and accuracy. np.log() is the natural log.
+  # Cross Entropy Loss를 계산한다. 
   loss = -np.log(out[label])
   acc = 1 if np.argmax(out) == label else 0
 
@@ -78,7 +81,7 @@ def train(im, label, lr):
 print('MNIST CNN initialized!')
 
 # Train the CNN for 3 epochs
-epoch_num = 5
+epoch_num = 8
 lr = 0.005
 for epoch in range(epoch_num):
   print('--- Epoch %d ---' % (epoch + 1))
@@ -131,5 +134,5 @@ result_dict = {'step' : step_arr ,
                'epoch' : epoch_num,
                'learning_rate': lr}
 
-with open(f'result_lr{lr}_epoch{epoch_num}.pkl') as f:
+with open(f'result_lr{lr}_epoch{epoch_num}.pkl', 'wb') as f:
    pickle.dump(result_dict,f)

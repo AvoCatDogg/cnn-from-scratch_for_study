@@ -66,14 +66,15 @@ class Conv3x3:
     # other layer in our CNN.
     return d_L_d_filters
   
-class Conv3x3xn:
+class Convfilt():
   # A Convolution layer using 3x3 filters.
 
-  def __init__(self, num_filters):
+  def __init__(self, filt_height, filt_ch, num_filters):
     self.num_filters = num_filters
+    self.filt_height = filt_height
     # filters is a 3d array with dimensions (num_filters, 3, 3)
     # We divide by 9 to reduce the variance of our initial values
-    self.filters = np.random.randn(num_filters, 3, 3)
+    self.filters = np.random.randn(num_filters, filt_height, filt_height, filt_ch)
 
   def iterate_regions(self, image):
     '''
@@ -95,12 +96,11 @@ class Conv3x3xn:
     '''
     self.last_input = input
 
-    h, w, ch = input.shape
+    h, w = input.shape
     output = np.zeros((h - 2, w - 2, self.num_filters))
 
     for im_region, i, j in self.iterate_regions(input):
-      for dim in range(ch):
-        output[i, j] += np.sum(im_region[:,:,dim] * self.filters, axis=(1, 2))
+      output[i, j] += np.sum(im_region * self.filters, axis=(1, 2, 3))
 
     return output
 
